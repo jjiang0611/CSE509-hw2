@@ -6,7 +6,7 @@ from Cryptodome.PublicKey import ElGamal
 from Cryptodome.Random import get_random_bytes
 
 # lengh of public key (bytes)
-key_length = 200
+key_length = 1024
 # length of item (bits)
 item_bit_length = 5
 # length of mask (lambda)
@@ -39,13 +39,15 @@ def Alice(end_a):
                 jth = (item >> (item_bit_length - j - 1)) & 1
                 # (2) generate a pair of keys (using the parameter 'key_length')
                 k_pair = ElGamal.generate(key_length, randfunc = lambda x: get_random_bytes(x))
-                pubkey = k_pair.publickey()
+                pk = k_pair.publickey()
+                sk = k_pair
+                print('modulus, generator, public key', pk.p, pk.g, pk.y)
                 # (3) generate a plausible random public key using 'getrandbits'
-                rand_pkey = randint(1, pubkey.p-1)
-                rand_pubkey_val = pow(pubkey.g, rand_pkey, pubkey.p)
-                rand_pubkey = ElGamal.(rand_pubkey_val, pubkey.g, pubkey.p)
+                rand_pk = randint(1, pk.p-1) #randint can be used to replace getrandbits
+                rand_pk_val = pow(pk.g, rand_pk, pk.p)
+                rand_pk = ElGamal.construct((rand_pk_val, pk.g, pk.p))
                 # (4) construct a message sent to Bob
-                msg= (i, j, jth, (pubkey, rand_pubkey))
+                msg= (i, j, jth, (pk, rand_pk))
                 # send message to Bob
                 end_a.send(msg)
 
@@ -58,12 +60,12 @@ def Alice(end_a):
                     cipher = msg[0]
                 else:
                     cipher = msg[1]
-                decrypted_mask = k_pair.decrypt(cipher_data)
+                d_mask = k_pair.decrypt(cipher)
                 # (6) update Alice's overall mask by bitwise XOR ('^=')
                 if j == 0:
-                    overall_mask = decrypted_mask
+                    overall_mask = d_mask
                 else:
-                    overall_mask ^= decrypted_mask
+                    overall_mask ^= d_mask
 
 
                 if j == item_bit_length-1:
@@ -99,7 +101,7 @@ def Bob(end_b):
           
         ### Todo:
         # (1) retrieve fields from the message
-        index, j, jth, (pubkey1, pubkey2) = msg
+        index, j, jth, (pk1, pk2) = msg
         item = item_set[index]
         # (2) identify the index of the item and the bit of the item Alice is checking against
         #     Note: both should be included in the message
@@ -118,8 +120,8 @@ def Bob(end_b):
             overall_mask ^= mask1
         # (6) encrypt the two masks using the public keys received from Alice
         #     Note: you need to construct two ElGamal objects, as you receive two sets of public keys
-        cipher0 = pubkey1.encrypt(mask0, getrandbits(key_length))[0]
-        cipher1 = pubkey2.encrypt(mask1, getrandbits(key_length))[0]
+        cipher0 = pk1.encrypt(mask0, getrandbits(key_length))[0]
+        cipher1 = pk2.encrypt(mask1, getrandbits(key_length))[0]
         # (7) construct a message that consists of the encrypted masks
         msg = (cipher0, cipher1)
         # send the message back to Alice    
