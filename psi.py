@@ -3,7 +3,7 @@ from multiprocessing import Pipe, Process
 from random import randint, getrandbits 
 from elgamal.elgamal import Elgamal
 from Cryptodome.PublicKey import ElGamal 
-from Crypto.Random import get_random_bytes
+from Cryptodome.Random import get_random_bytes
 
 # lengh of public key (bytes)
 key_length = 200
@@ -43,7 +43,7 @@ def Alice(end_a):
                 # (3) generate a plausible random public key using 'getrandbits'
                 rand_pkey = randint(1, pubkey.p-1)
                 rand_pubkey_val = pow(pubkey.g, rand_pkey, pubkey.p)
-                rand_pubkey = ElGamal.construct(rand_pubkey_val, pubkey.g, pubkey.p)
+                rand_pubkey = ElGamal.(rand_pubkey_val, pubkey.g, pubkey.p)
                 # (4) construct a message sent to Bob
                 msg= (i, j, jth, (pubkey, rand_pubkey))
                 # send message to Bob
