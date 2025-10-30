@@ -1,11 +1,12 @@
 
 from multiprocessing import Pipe, Process
 from random import randint, getrandbits 
-from Cryptodome.PublicKey import ElGamal
-from Cryptodome.Random import get_random_bytes
+from elgamal.elgamal import Elgamal
+from Cryptodome.PublicKey import ElGamal 
+from Crypto.Random import get_random_bytes
 
 # lengh of public key (bytes)
-key_length = 1000
+key_length = 200
 # length of item (bits)
 item_bit_length = 5
 # length of mask (lambda)
@@ -26,7 +27,7 @@ def Alice(end_a):
 
     # iterate over each item of Alice's
     for item in item_set:
-        
+
         # iterate over each item of Bob's
         for i in range(num_item):
             
@@ -42,7 +43,7 @@ def Alice(end_a):
                 # (3) generate a plausible random public key using 'getrandbits'
                 rand_pkey = randint(1, pubkey.p-1)
                 rand_pubkey_val = pow(pubkey.g, rand_pkey, pubkey.p)
-                rand_pubkey = ElGamal.PublicKey(rand_pubkey_val, pubkey.g, pubkey.p)
+                rand_pubkey = ElGamal.construct(rand_pubkey_val, pubkey.g, pubkey.p)
                 # (4) construct a message sent to Bob
                 msg= (i, j, jth, (pubkey, rand_pubkey))
                 # send message to Bob
@@ -117,12 +118,8 @@ def Bob(end_b):
             overall_mask ^= mask1
         # (6) encrypt the two masks using the public keys received from Alice
         #     Note: you need to construct two ElGamal objects, as you receive two sets of public keys
-        elgamal1 = Elgamal()
-        elgamal1.set_publickey(pubkey1)
         cipher0 = pubkey1.encrypt(mask0, getrandbits(key_length))[0]
-        elgamal2 = Elgamal()
-        elgamal2.set_publickey(pubkey2)
-        cipher1 = elgamal2.encrypt(mask1, getrandbits(key_length))[0]
+        cipher1 = pubkey2.encrypt(mask1, getrandbits(key_length))[0]
         # (7) construct a message that consists of the encrypted masks
         msg = (cipher0, cipher1)
         # send the message back to Alice    
